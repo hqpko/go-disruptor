@@ -1,5 +1,7 @@
 package disruptor
 
+import "sync/atomic"
+
 const (
 	MaxSequenceValue     int64 = (1 << 63) - 1
 	InitialSequenceValue int64 = -1
@@ -20,4 +22,16 @@ type Cursor struct {
 
 func NewCursor() *Cursor {
 	return &Cursor{sequence: InitialSequenceValue}
+}
+
+func (this *Cursor) Store(sequence int64) {
+	atomic.StoreInt64(&this.sequence, sequence)
+}
+
+func (this *Cursor) Load() int64 {
+	return atomic.LoadInt64(&this.sequence)
+}
+
+func (this *Cursor) Read(noop int64) int64 {
+	return atomic.LoadInt64(&this.sequence)
 }
