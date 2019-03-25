@@ -5,18 +5,18 @@ type SharedDisruptor struct {
 	readers []*Reader
 }
 
-func (this SharedDisruptor) Writer() *SharedWriter {
-	return this.writer
+func (s SharedDisruptor) Writer() *SharedWriter {
+	return s.writer
 }
 
-func (this SharedDisruptor) Start() {
-	for _, item := range this.readers {
+func (s SharedDisruptor) Start() {
+	for _, item := range s.readers {
 		item.Start()
 	}
 }
 
-func (this SharedDisruptor) Stop() {
-	for _, item := range this.readers {
+func (s SharedDisruptor) Stop() {
+	for _, item := range s.readers {
 		item.Stop()
 	}
 }

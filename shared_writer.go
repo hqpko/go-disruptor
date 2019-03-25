@@ -21,24 +21,24 @@ func NewSharedWriter(write *SharedWriterBarrier, depBarrier Barrier) *SharedWrit
 	}
 }
 
-func (this *SharedWriter) Reserve(count int64) int64 {
+func (s *SharedWriter) Reserve(count int64) int64 {
 	for {
-		previous := this.written.Load()
+		previous := s.written.Load()
 		upper := previous + count
 
-		for spin := int64(0); upper-this.capacity > this.gate.Load(); spin++ {
+		for spin := int64(0); upper-s.capacity > s.gate.Load(); spin++ {
 			if spin&SpinMask == 0 {
 				runtime.Gosched() // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
 			}
-			this.gate.Store(this.depBarrier.Read(0))
+			s.gate.Store(s.depBarrier.Read(0))
 		}
 
-		if this.written.CompareAndSwapInt64(previous, upper) {
+		if s.written.CompareAndSwapInt64(previous, upper) {
 			return upper
 		}
 	}
 }
 
-func (this *SharedWriter) Commit(lower, upper int64) {
-	this.writerBarrier.Commit(lower, upper)
+func (s *SharedWriter) Commit(lower, upper int64) {
+	s.writerBarrier.Commit(lower, upper)
 }

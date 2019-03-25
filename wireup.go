@@ -18,30 +18,30 @@ func Configure(capacity int64) Wireup {
 	}
 }
 
-func (this Wireup) WithConsumerGroup(consumers ...Consumer) Wireup {
+func (w Wireup) WithConsumerGroup(consumers ...Consumer) Wireup {
 	if len(consumers) == 0 {
-		return this
+		return w
 	}
 
 	target := make([]Consumer, len(consumers))
 	copy(target, consumers)
 
 	for i := 0; i < len(consumers); i++ {
-		this.cursors = append(this.cursors, NewCursor())
+		w.cursors = append(w.cursors, NewCursor())
 	}
 
-	this.groups = append(this.groups, target)
-	return this
+	w.groups = append(w.groups, target)
+	return w
 }
 
-func (this Wireup) Build() Disruptor {
+func (w Wireup) Build() Disruptor {
 	allReaders := []*Reader{}
-	written := this.cursors[0]
-	var depBarrier Barrier = this.cursors[0]
+	written := w.cursors[0]
+	var depBarrier Barrier = w.cursors[0]
 	cursorIndex := 1 // 0 index is reserved for the writer Cursor
 
-	for groupIndex, group := range this.groups {
-		groupReaders, groupBarrier := this.buildReaders(groupIndex, cursorIndex, written, depBarrier)
+	for groupIndex, group := range w.groups {
+		groupReaders, groupBarrier := w.buildReaders(groupIndex, cursorIndex, written, depBarrier)
 		for _, item := range groupReaders {
 			allReaders = append(allReaders, item)
 		}
@@ -49,19 +49,19 @@ func (this Wireup) Build() Disruptor {
 		cursorIndex += len(group)
 	}
 
-	writer := NewWriter(written, depBarrier, this.capacity)
+	writer := NewWriter(written, depBarrier, w.capacity)
 	return Disruptor{writer: writer, readers: allReaders}
 }
 
-func (this Wireup) BuildShared() SharedDisruptor {
+func (w Wireup) BuildShared() SharedDisruptor {
 	allReaders := []*Reader{}
-	written := this.cursors[0]
-	writerBarrier := NewSharedWriterBarrier(written, this.capacity)
+	written := w.cursors[0]
+	writerBarrier := NewSharedWriterBarrier(written, w.capacity)
 	var depBarrier Barrier = writerBarrier
 	cursorIndex := 1 // 0 index is reserved for the writer Cursor
 
-	for groupIndex, group := range this.groups {
-		groupReaders, groupBarrier := this.buildReaders(groupIndex, cursorIndex, written, depBarrier)
+	for groupIndex, group := range w.groups {
+		groupReaders, groupBarrier := w.buildReaders(groupIndex, cursorIndex, written, depBarrier)
 		for _, item := range groupReaders {
 			allReaders = append(allReaders, item)
 		}
@@ -73,19 +73,19 @@ func (this Wireup) BuildShared() SharedDisruptor {
 	return SharedDisruptor{writer: writer, readers: allReaders}
 }
 
-func (this Wireup) buildReaders(consumerIndex, cursorIndex int, written *Cursor, depBarrier Barrier) ([]*Reader, Barrier) {
+func (w Wireup) buildReaders(consumerIndex, cursorIndex int, written *Cursor, depBarrier Barrier) ([]*Reader, Barrier) {
 	barrierCursors := []*Cursor{}
 	readers := []*Reader{}
 
-	for _, consumer := range this.groups[consumerIndex] {
-		cursor := this.cursors[cursorIndex]
+	for _, consumer := range w.groups[consumerIndex] {
+		cursor := w.cursors[cursorIndex]
 		barrierCursors = append(barrierCursors, cursor)
 		reader := NewReader(cursor, written, depBarrier, consumer)
 		readers = append(readers, reader)
 		cursorIndex++
 	}
 
-	if len(this.groups[consumerIndex]) == 1 {
+	if len(w.groups[consumerIndex]) == 1 {
 		return readers, barrierCursors[0]
 	} else {
 		return readers, NewCompositeBarrier(barrierCursors...)

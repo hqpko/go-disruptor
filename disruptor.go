@@ -5,18 +5,18 @@ type Disruptor struct {
 	readers []*Reader
 }
 
-func (this Disruptor) Writer() *Writer {
-	return this.writer
+func (d Disruptor) Writer() *Writer {
+	return d.writer
 }
 
-func (this Disruptor) Start() {
-	for _, item := range this.readers {
+func (d Disruptor) Start() {
+	for _, item := range d.readers {
 		item.Start()
 	}
 }
 
-func (this Disruptor) Stop() {
-	for _, item := range this.readers {
+func (d Disruptor) Stop() {
+	for _, item := range d.readers {
 		item.Stop()
 	}
 }

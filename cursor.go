@@ -24,18 +24,18 @@ func NewCursor() *Cursor {
 	return &Cursor{sequence: InitialSequenceValue}
 }
 
-func (this *Cursor) Store(sequence int64) {
-	atomic.StoreInt64(&this.sequence, sequence)
+func (c *Cursor) Store(sequence int64) {
+	atomic.StoreInt64(&c.sequence, sequence)
 }
 
-func (this *Cursor) Load() int64 {
-	return atomic.LoadInt64(&this.sequence)
+func (c *Cursor) Load() int64 {
+	return atomic.LoadInt64(&c.sequence)
 }
 
-func (this *Cursor) Read(noop int64) int64 {
-	return atomic.LoadInt64(&this.sequence)
+func (c *Cursor) Read(noop int64) int64 {
+	return atomic.LoadInt64(&c.sequence)
 }
 
-func (this *Cursor) CompareAndSwapInt64(old, new int64) bool {
-	return atomic.CompareAndSwapInt64(&this.sequence, old, new)
+func (c *Cursor) CompareAndSwapInt64(old, new int64) bool {
+	return atomic.CompareAndSwapInt64(&c.sequence, old, new)
 }

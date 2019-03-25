@@ -12,9 +12,9 @@ func NewCompositeBarrier(barriers ...*Cursor) CompositeBarrier {
 	return CompositeBarrier(cursors)
 }
 
-func (this CompositeBarrier) Read(noop int64) int64 {
+func (c CompositeBarrier) Read(noop int64) int64 {
 	minimum := MaxSequenceValue
-	for _, item := range this {
+	for _, item := range c {
 		sequence := item.Load()
 		if sequence < minimum {
 			minimum = sequence

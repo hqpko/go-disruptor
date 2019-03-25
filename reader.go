@@ -23,32 +23,32 @@ func NewReader(read, written *Cursor, writerBarrier Barrier, consumer Consumer) 
 	}
 }
 
-func (this *Reader) Start() {
-	this.ready = true
-	go this.receive()
+func (r *Reader) Start() {
+	r.ready = true
+	go r.receive()
 }
-func (this *Reader) Stop() {
-	this.ready = false
+func (r *Reader) Stop() {
+	r.ready = false
 }
 
-func (this *Reader) receive() {
-	previous := this.read.Load()
+func (r *Reader) receive() {
+	previous := r.read.Load()
 	idling, gating := 0, 0
 
 	for {
 		lower := previous + 1
-		upper := this.writerBarrier.Read(lower)
+		upper := r.writerBarrier.Read(lower)
 
 		if lower <= upper {
-			this.consumer.Consume(lower, upper)
-			this.read.Store(upper)
+			r.consumer.Consume(lower, upper)
+			r.read.Store(upper)
 			previous = upper
-		} else if upper = this.written.Load(); lower <= upper {
+		} else if upper = r.written.Load(); lower <= upper {
 			time.Sleep(time.Microsecond)
 			// Gating--TODO: wait strategy (provide gating count to wait strategy for phased backoff)
 			gating++
 			idling = 0
-		} else if this.ready {
+		} else if r.ready {
 			time.Sleep(time.Millisecond)
 			// Idling--TODO: wait strategy (provide idling count to wait strategy for phased backoff)
 			idling++

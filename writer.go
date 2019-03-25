@@ -29,28 +29,28 @@ func assertPowerOfTwo(value int64) {
 	}
 }
 
-func (this *Writer) Reserve(count int64) int64 {
-	this.previous += count
+func (w *Writer) Reserve(count int64) int64 {
+	w.previous += count
 
-	for spin := int64(0); this.previous-this.capacity > this.gate; spin++ {
+	for spin := int64(0); w.previous-w.capacity > w.gate; spin++ {
 		if spin&SpinMask == 0 {
 			runtime.Gosched() // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
 		}
 
-		this.gate = this.readerBarrier.Read(0)
+		w.gate = w.readerBarrier.Read(0)
 	}
 
-	return this.previous
+	return w.previous
 }
 
-func (this *Writer) Await(next int64) {
-	for next-this.capacity > this.gate {
-		this.gate = this.readerBarrier.Read(0)
+func (w *Writer) Await(next int64) {
+	for next-w.capacity > w.gate {
+		w.gate = w.readerBarrier.Read(0)
 	}
 }
 
 const SpinMask = 1024*16 - 1 // arbitrary; we'll want to experiment with different values
 
-func (this *Writer) Commit(lower, upper int64) {
-	this.written.Store(upper)
+func (w *Writer) Commit(lower, upper int64) {
+	w.written.Store(upper)
 }
