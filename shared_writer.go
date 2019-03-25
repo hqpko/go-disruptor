@@ -1,23 +1,20 @@
 package disruptor
 
-import (
-	"runtime"
-	"sync/atomic"
-)
+import "runtime"
 
 type SharedWriter struct {
-	written  *Cursor
-	upstream Barrier
-	capacity int64
-	gate     *Cursor
+	written    *Cursor
+	depBarrier Barrier // 所依赖的屏障，写屏障依赖于最后一组读屏障
+	capacity   int64
+	gate       *Cursor
 
 	writerBarrier *SharedWriterBarrier
 }
 
-func NewSharedWriter(write *SharedWriterBarrier, upstream Barrier) *SharedWriter {
+func NewSharedWriter(write *SharedWriterBarrier, depBarrier Barrier) *SharedWriter {
 	return &SharedWriter{
 		written:       write.written,
-		upstream:      upstream,
+		depBarrier:    depBarrier,
 		capacity:      write.capacity,
 		gate:          NewCursor(),
 		writerBarrier: write,
@@ -33,10 +30,10 @@ func (this *SharedWriter) Reserve(count int64) int64 {
 			if spin&SpinMask == 0 {
 				runtime.Gosched() // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
 			}
-			this.gate.Store(this.upstream.Read(0))
+			this.gate.Store(this.depBarrier.Read(0))
 		}
 
-		if atomic.CompareAndSwapInt64(&this.written.sequence, previous, upper) {
+		if this.written.CompareAndSwapInt64(previous, upper) {
 			return upper
 		}
 	}

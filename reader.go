@@ -6,20 +6,20 @@ import (
 )
 
 type Reader struct {
-	read     *Cursor
-	written  *Cursor
-	upstream Barrier
-	consumer Consumer
-	ready    bool
+	read          *Cursor
+	written       *Cursor
+	writerBarrier Barrier
+	consumer      Consumer
+	ready         bool
 }
 
-func NewReader(read, written *Cursor, upstream Barrier, consumer Consumer) *Reader {
+func NewReader(read, written *Cursor, writerBarrier Barrier, consumer Consumer) *Reader {
 	return &Reader{
-		read:     read,
-		written:  written,
-		upstream: upstream,
-		consumer: consumer,
-		ready:    false,
+		read:          read,
+		written:       written,
+		writerBarrier: writerBarrier,
+		consumer:      consumer,
+		ready:         false,
 	}
 }
 
@@ -37,7 +37,7 @@ func (this *Reader) receive() {
 
 	for {
 		lower := previous + 1
-		upper := this.upstream.Read(lower)
+		upper := this.writerBarrier.Read(lower)
 
 		if lower <= upper {
 			this.consumer.Consume(lower, upper)

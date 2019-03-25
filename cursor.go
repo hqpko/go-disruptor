@@ -35,3 +35,7 @@ func (this *Cursor) Load() int64 {
 func (this *Cursor) Read(noop int64) int64 {
 	return atomic.LoadInt64(&this.sequence)
 }
+
+func (this *Cursor) CompareAndSwapInt64(old, new int64) bool {
+	return atomic.CompareAndSwapInt64(&this.sequence, old, new)
+}

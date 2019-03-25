@@ -37,19 +37,19 @@ func (this Wireup) WithConsumerGroup(consumers ...Consumer) Wireup {
 func (this Wireup) Build() Disruptor {
 	allReaders := []*Reader{}
 	written := this.cursors[0]
-	var upstream Barrier = this.cursors[0]
+	var depBarrier Barrier = this.cursors[0]
 	cursorIndex := 1 // 0 index is reserved for the writer Cursor
 
 	for groupIndex, group := range this.groups {
-		groupReaders, groupBarrier := this.buildReaders(groupIndex, cursorIndex, written, upstream)
+		groupReaders, groupBarrier := this.buildReaders(groupIndex, cursorIndex, written, depBarrier)
 		for _, item := range groupReaders {
 			allReaders = append(allReaders, item)
 		}
-		upstream = groupBarrier
+		depBarrier = groupBarrier
 		cursorIndex += len(group)
 	}
 
-	writer := NewWriter(written, upstream, this.capacity)
+	writer := NewWriter(written, depBarrier, this.capacity)
 	return Disruptor{writer: writer, readers: allReaders}
 }
 
@@ -57,30 +57,30 @@ func (this Wireup) BuildShared() SharedDisruptor {
 	allReaders := []*Reader{}
 	written := this.cursors[0]
 	writerBarrier := NewSharedWriterBarrier(written, this.capacity)
-	var upstream Barrier = writerBarrier
+	var depBarrier Barrier = writerBarrier
 	cursorIndex := 1 // 0 index is reserved for the writer Cursor
 
 	for groupIndex, group := range this.groups {
-		groupReaders, groupBarrier := this.buildReaders(groupIndex, cursorIndex, written, upstream)
+		groupReaders, groupBarrier := this.buildReaders(groupIndex, cursorIndex, written, depBarrier)
 		for _, item := range groupReaders {
 			allReaders = append(allReaders, item)
 		}
-		upstream = groupBarrier
+		depBarrier = groupBarrier
 		cursorIndex += len(group)
 	}
 
-	writer := NewSharedWriter(writerBarrier, upstream)
+	writer := NewSharedWriter(writerBarrier, depBarrier)
 	return SharedDisruptor{writer: writer, readers: allReaders}
 }
 
-func (this Wireup) buildReaders(consumerIndex, cursorIndex int, written *Cursor, upstream Barrier) ([]*Reader, Barrier) {
+func (this Wireup) buildReaders(consumerIndex, cursorIndex int, written *Cursor, depBarrier Barrier) ([]*Reader, Barrier) {
 	barrierCursors := []*Cursor{}
 	readers := []*Reader{}
 
 	for _, consumer := range this.groups[consumerIndex] {
 		cursor := this.cursors[cursorIndex]
 		barrierCursors = append(barrierCursors, cursor)
-		reader := NewReader(cursor, written, upstream, consumer)
+		reader := NewReader(cursor, written, depBarrier, consumer)
 		readers = append(readers, reader)
 		cursorIndex++
 	}

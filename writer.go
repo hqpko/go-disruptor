@@ -3,22 +3,22 @@ package disruptor
 import "runtime"
 
 type Writer struct {
-	written  *Cursor
-	upstream Barrier
-	capacity int64
-	previous int64
-	gate     int64
+	written       *Cursor
+	readerBarrier Barrier
+	capacity      int64
+	previous      int64
+	gate          int64
 }
 
-func NewWriter(written *Cursor, upstream Barrier, capacity int64) *Writer {
+func NewWriter(written *Cursor, readerBarrier Barrier, capacity int64) *Writer {
 	assertPowerOfTwo(capacity)
 
 	return &Writer{
-		upstream: upstream,
-		written:  written,
-		capacity: capacity,
-		previous: InitialSequenceValue,
-		gate:     InitialSequenceValue,
+		readerBarrier: readerBarrier,
+		written:       written,
+		capacity:      capacity,
+		previous:      InitialSequenceValue,
+		gate:          InitialSequenceValue,
 	}
 }
 
@@ -37,7 +37,7 @@ func (this *Writer) Reserve(count int64) int64 {
 			runtime.Gosched() // LockSupport.parkNanos(1L); http://bit.ly/1xiDINZ
 		}
 
-		this.gate = this.upstream.Read(0)
+		this.gate = this.readerBarrier.Read(0)
 	}
 
 	return this.previous
@@ -45,7 +45,7 @@ func (this *Writer) Reserve(count int64) int64 {
 
 func (this *Writer) Await(next int64) {
 	for next-this.capacity > this.gate {
-		this.gate = this.upstream.Read(0)
+		this.gate = this.readerBarrier.Read(0)
 	}
 }
 
