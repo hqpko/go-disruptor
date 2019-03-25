@@ -6,24 +6,21 @@ import (
 )
 
 type SharedWriter struct {
-	written   *Cursor
-	upstream  Barrier
-	capacity  int64
-	gate      *Cursor
-	mask      int64
-	shift     uint8
-	committed []int32
+	written  *Cursor
+	upstream Barrier
+	capacity int64
+	gate     *Cursor
+
+	writerBarrier *SharedWriterBarrier
 }
 
 func NewSharedWriter(write *SharedWriterBarrier, upstream Barrier) *SharedWriter {
 	return &SharedWriter{
-		written:   write.written,
-		upstream:  upstream,
-		capacity:  write.capacity,
-		gate:      NewCursor(),
-		mask:      write.mask,
-		shift:     write.shift,
-		committed: write.committed,
+		written:       write.written,
+		upstream:      upstream,
+		capacity:      write.capacity,
+		gate:          NewCursor(),
+		writerBarrier: write,
 	}
 }
 
@@ -46,19 +43,5 @@ func (this *SharedWriter) Reserve(count int64) int64 {
 }
 
 func (this *SharedWriter) Commit(lower, upper int64) {
-	if lower > upper {
-		panic("Attempting to commit a sequence where the lower reservation is greater than the higher reservation.")
-	} else if (upper - lower) > this.capacity {
-		panic("Attempting to commit a reservation larger than the size of the ring buffer. (upper-lower > this.capacity)")
-	} else if lower == upper {
-		this.committed[upper&this.mask] = int32(upper >> this.shift)
-	} else {
-		// working down the array rather than up keeps all items in the commit together
-		// otherwise the reader(s) could split up the group
-		for upper >= lower {
-			this.committed[upper&this.mask] = int32(upper >> this.shift)
-			upper--
-		}
-
-	}
+	this.writerBarrier.Commit(lower, upper)
 }
