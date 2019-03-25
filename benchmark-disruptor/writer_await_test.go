@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/smartystreets/go-disruptor"
+	"github.com/hqpko/go-disruptor"
 )
 
 func BenchmarkWriterAwaitOne(b *testing.B) {

@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/smartystreets/go-disruptor"
+	"github.com/hqpko/go-disruptor"
 )
 
 const (
