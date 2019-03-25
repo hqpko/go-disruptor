@@ -50,3 +50,7 @@ func (this *Writer) Await(next int64) {
 }
 
 const SpinMask = 1024*16 - 1 // arbitrary; we'll want to experiment with different values
+
+func (this *Writer) Commit(lower, upper int64) {
+	this.written.Store(upper)
+}
