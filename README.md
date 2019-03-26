@@ -1,3 +1,5 @@
+> benchmark 测试中，把 ringBufferSize 设置为短些，例如 1024 时，channel 的性能是更好的，而且使用起来也更方便
+
 Notes
 =====
 
