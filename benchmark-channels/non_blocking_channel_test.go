@@ -25,7 +25,7 @@ func BenchmarkNonBlockingThreeGoroutinesWithContendedWrite(b *testing.B) {
 func benchmarkNonBlocking(b *testing.B, writers int64) {
 	iterations := int64(b.N)
 	maxReads := iterations * writers
-	channel := make(chan int64, 1024*16)
+	channel := make(chan int64, 1024)
 
 	b.ReportAllocs()
 	b.ResetTimer()
